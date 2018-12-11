@@ -4,7 +4,19 @@
 
 #### NEW FEATURES
 
-1. `fread()` can now read a remote compressed file in one step; `fread("https://domain.org/file.csv.bz2")`. The `file=` argument now supports `.gz` and `.bz2` too; i.e. `fread(file="file.csv.gz")` works now where only `fread("file.csv.gz")` worked in 1.11.8.
+1. `[.data.table` gains `old.nonequi=.datatable.old.nonequi` argument :
+    ```
+    TRUE           # this release; i.e. no change yet; old behaviour
+    "warning"      # issues warning for every roll= and non-equi on= query
+    "error"        # issues error for every roll= and non-equi on= query
+    FALSE          # future release; new behaviour
+    ```
+    This future breaking change resolves frequent complaints and confusion from users regarding `roll=` and non-equi join columns, [#1615](https://github.com/Rdatatable/data.table/issues/1615), [#1700](https://github.com/Rdatatable/data.table/issues/1700), [#2006](https://github.com/Rdatatable/data.table/issues/2006), [#2569](https://github.com/Rdatatable/data.table/issues/2569) and related issues [#1469](https://github.com/Rdatatable/data.table/issues/1469), [#1807](https://github.com/Rdatatable/data.table/issues/1807), [#2307](https://github.com/Rdatatable/data.table/issues/2307), [#2595](https://github.com/Rdatatable/data.table/issues/2595), and [#2602](https://github.com/Rdatatable/data.table/issues/2602). New behaviour i) includes both sides of join columns which have been non-equi joined (so the result now has more columns) and ii) for such columns, the data from the `i` table is no longer renamed with the column from `x`. Many thanks to @sritchie73 for the implementation [PR#2706](https://github.com/Rdatatable/data.table/pull/2706) [PR#3093](https://github.com/Rdatatable/data.table/pull/3093) and to many for feedback on the PR.
+    A few packages on CRAN and Bioconductor need to migrate. They will set `.datatable.old.nonequi=FALSE` in their namespace when they have. You can set the variable to `"warning"` or `"error"` in order to find all `roll=` and non-equi-`on=` usage in your code. Once you have identified and migrated all usage, you can set the option to `FALSE`.
+    There is no change to the much more common case of equi-joined columns. For such columns, the data in `i` is still named in the result using the name from `x`.
+    The default will be changed to `FALSE` in future and then the argument and option will eventually be removed; hence the `old.` prefix to convey it is a migration option.
+
+2. `fread()` can now read a remote compressed file in one step; `fread("https://domain.org/file.csv.bz2")`. The `file=` argument now supports `.gz` and `.bz2` too; i.e. `fread(file="file.csv.gz")` works now where only `fread("file.csv.gz")` worked in 1.11.8.
 
 2. `nomatch=NULL` now does the same as `nomatch=0L`; i.e. discards missing values silently (inner join). The default is still `nomatch=NA` (outer join) for statistical safety so that missing values are retained by default. You have to explicitly write `nomatch=NULL` to indicate to the reader of your code that you intend to discard missing values silently. After several years have elapsed, we will start to deprecate `0L`; please start using `NULL`. TO DO ... `nomatch=.(0)` fills with `0` instead of `NA`, [#857](https://github.com/Rdatatable/data.table/issues/857) and `nomatch="error"`.
 
