@@ -4,6 +4,8 @@
 
 #### NEW FEATURES
 
+1. `setkey()` and `setkeyv()` gain `keep.indices=`, [#1158](https://github.com/Rdatatable/data.table/issues/1158). This option retains any existing indices (i.e. secondary keys) by reordering them appropriately given the new row order. This is more efficient and more convenient than creating indices anew after the `setkey()`. This option is experimental, subject to change and currently `FALSE` by default. The default may be changed to `TRUE` in future via a global option such as `datatable.keep.indices`.
+
 #### BUG FIXES
 
 1. `rbindlist()` of a malformed factor missing levels attribute is now a helpful error rather than a cryptic error about `STRING_ELT`, [#3315](https://github.com/Rdatatable/data.table/issues/3315). Thanks to Michael Chirico for reporting.

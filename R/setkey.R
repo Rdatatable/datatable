@@ -1,10 +1,10 @@
-setkey <- function(x, ..., verbose=getOption("datatable.verbose"), physical=TRUE)
+setkey <- function(x, ..., verbose=getOption("datatable.verbose"), physical=TRUE, keep.indices=FALSE)
 {
   if (is.character(x)) stop("x may no longer be the character name of the data.table. The possibility was undocumented and has been removed.")
   cols = as.character(substitute(list(...))[-1L])
   if (!length(cols)) { cols=colnames(x) }
   else if (identical(cols,"NULL")) cols=NULL
-  setkeyv(x, cols, verbose=verbose, physical=physical)
+  setkeyv(x, cols, verbose=verbose, physical=physical, keep.indices=keep.indices)
 }
 
 # FR #1442
@@ -28,7 +28,7 @@ key2 <- function(x) {
   stop("key2() is now deprecated. Please use indices() instead.")
 }
 
-setkeyv <- function(x, cols, verbose=getOption("datatable.verbose"), physical=TRUE)
+setkeyv <- function(x, cols, verbose=getOption("datatable.verbose"), physical=TRUE, keep.indices=FALSE)
 {
   if (is.null(cols)) {   # this is done on a data.frame when !cedta at top of [.data.table
     if (physical) setattr(x,"sorted",NULL)
@@ -45,6 +45,7 @@ setkeyv <- function(x, cols, verbose=getOption("datatable.verbose"), physical=TR
   }
   if (identical(cols,"")) stop("cols is the empty string. Use NULL to remove the key.")
   if (!all(nzchar(cols))) stop("cols contains some blanks.")
+  if (!(identical(keep.indices,TRUE) || identical(keep.indices,FALSE))) stop("keep.indices must be TRUE or FALSE")
   if (!length(cols)) {
     cols = colnames(x)   # All columns in the data.table, usually a few when used in this form
   } else {
@@ -77,32 +78,35 @@ setkeyv <- function(x, cols, verbose=getOption("datatable.verbose"), physical=TR
   if (".xi" %chin% names(x)) stop("x contains a column called '.xi'. Conflicts with internal use by data.table.")
   for (i in cols) {
     .xi = x[[i]]  # [[ is copy on write, otherwise checking type would be copying each column
-    if (!typeof(.xi) %chin% c("integer","logical","character","double")) stop("Column '",i,"' is type '",typeof(.xi),"' which is not supported as a key column type, currently.")
+    if (!(.xi.type<-typeof(.xi)) %chin% c("integer","logical","character","double")) stop("Column '",i,"' is type '",.xi.type,"' which is not supported as a key column type, currently.")
   }
   if (!is.character(cols) || length(cols)<1L) stop("Internal error. 'cols' should be character at this point in setkey; please report.") # nocov
-  if (verbose) {
-    tt = suppressMessages(system.time(o <- forderv(x, cols, sort=TRUE, retGrp=FALSE)))  # system.time does a gc, so we don't want this always on, until refcnt is on by default in R
-    # suppress needed for tests 644 and 645 in verbose mode
-    cat("forder took", tt["user.self"]+tt["sys.self"], "sec\n")
-  } else {
-    o <- forderv(x, cols, sort=TRUE, retGrp=FALSE)
-  }
+  started.at = proc.time()
+  o = forderv(x, cols, sort=TRUE, retGrp=FALSE)
+  if (verbose) cat("forder took", timetaken(started.at), "\n")
   if (!physical) {
     if (is.null(attr(x,"index",exact=TRUE))) setattr(x, "index", integer())
     setattr(attr(x,"index",exact=TRUE), paste0("__", cols, collapse=""), o)
     return(invisible(x))
   }
-  setattr(x,"index",NULL)   # TO DO: reorder existing indexes likely faster than rebuilding again. Allow optionally. Simpler for now to clear.
   if (length(o)) {
-    if (verbose) {
-      tt = suppressMessages(system.time(.Call(Creorder,x,o)))
-      cat("reorder took", tt["user.self"]+tt["sys.self"], "sec\n")
-    } else {
-      .Call(Creorder,x,o)
+    if (!keep.indices) setattr(x,"index",NULL)
+    else if (!is.null(IDX<-attr(x,"index",exact=TRUE))) { # setkeyv capable to reorder index #1158
+      started.at = proc.time()
+      oo = forderv(o)
+      for (idx in names(attributes(IDX))) {
+        io = attr(IDX, idx, exact=TRUE)
+        setattr(IDX, idx, if (length(io)) oo[io] else o)
+      }
+      if (verbose) cat("reorder indices took", timetaken(started.at), "\n")
     }
+    started.at = proc.time()
+    .Call(Creorder,x,o)
+    if (verbose) cat("reorder rows took", timetaken(started.at), "\n")
   } else {
-    if (verbose) cat("x is already ordered by these columns, no need to call reorder\n")
-  } # else empty integer() from forderv means x is already ordered by those cols, nothing to do.
+    # empty integer() from forderv means x is already ordered by those cols, nothing to do.
+    if (verbose) cat("x is already ordered by these columns. No need to reorder.\n")
+  }
   setattr(x,"sorted",cols)
   invisible(x)
 }
