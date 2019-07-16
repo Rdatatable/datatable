@@ -46,7 +46,6 @@ if (exists("test.data.table", .GlobalEnv, inherits=FALSE)) {
   setcoalesce = data.table:::setcoalesce
   setdiff_ = data.table:::setdiff_
   setreordervec = data.table:::setreordervec
-  setrev = data.table:::setrev
   shallow = data.table:::shallow # until exported
   .shallow = data.table:::.shallow
   split.data.table = data.table:::split.data.table
@@ -3920,33 +3919,7 @@ test(1159.6, setDT(x), error="Argument 'x' to 'setDT' should be a")
 x <- list(1, 2:3)
 test(1159.7, setDT(x), error="All elements in argument 'x' to 'setDT'")
 
-# tests for setrev
-x <- sample(10)
-y <- rev(x)
-setrev(x)
-test(1160.1, y, x)
-x <- sample(c(1:10, NA), 21, TRUE)
-y <- rev(x)
-setrev(x)
-test(1160.2, y, x)
-x <- sample(runif(10))
-y <- rev(x)
-setrev(x)
-test(1160.3, y, x)
-x <- sample(c(runif(10), NA, NaN), 21, TRUE)
-y <- rev(x)
-setrev(x)
-test(1160.4, y, x)
-x <- sample(letters)
-y <- rev(x)
-setrev(x)
-test(1160.5, y, x)
-x <- as.logical(sample(0:1, 20, TRUE))
-y <- rev(x)
-setrev(x)
-test(1160.6, y, x)
-x <- list(1:10)
-test(1160.7, setrev(x), error="Input 'x' must be a vector")
+# test 1160 was for internal and never exported setrev which was no longer needed; removed in v1.12.4
 
 # tests for setreordervec
 # integer
@@ -5502,37 +5475,62 @@ for (i in seq_along(dt)) {
 }
 
 # tests for is_na, which is equivalent of rowSums(is.na(dt)) > 0L
-# not exported yet, but we could!
-## UPDATE: also added tests for "any_na", internal version of anyNA
-## which also includes implementation for bit64::integer64, but the
-## real need is for merging factors correctly in joins, and we need
-## a fast check for NAs; can't rely on 3.1+ for anyNA.
+## UPDATE: also added tests for "any_na", which also includes implementation
+## for bit64::integer64, but the real need is for merging factors correctly in
+## joins, and we need a fast check for NAs; can't rely on 3.1+ for anyNA.
 dt = list(AA=sample(c(NA,-2:2), 50, TRUE),
-                BB=sample(c(NA,-2,-1,0,NaN,1,2,Inf,-Inf), 50, TRUE),
-                CC=sample(c(NA,letters[1:5]), 50, TRUE),
-                DD=sample(c(NA,-2:2), 50, TRUE),
-                EE=sample(as.logical(c(NA,-2:2)), 50, TRUE))
+          BB=sample(c(NA,-2,-1,0,NaN,1,2,Inf,-Inf), 50, TRUE),
+          CC=sample(c(NA,letters[1:5]), 50, TRUE),
+          DD=sample(c(NA,-2:2), 50, TRUE),
+          EE=sample(as.logical(c(NA,-2:2)), 50, TRUE))
 if (test_bit64) dt[["DD"]] = as.integer64(dt[["DD"]])
 test_no = 1370.0
 ans = as.list(na.omit(as.data.table(dt)))
 for (i in seq_along(dt)) {
   combn(names(dt), i, function(cols) {
-    ans1 = is_na(dt[cols])
+    ans1 = is_na(dt, cols)
     ans2 = rowSums(is.na(as.data.table(dt[cols]))) > 0L
-    test_no <<- test_no+.0001
+    test_no <<- test_no+0.001
     test(test_no, ans1, ans2)
+    test_no <<- test_no+0.001
+    test(test_no, is_na(dt, names(dt) %in% cols),
+                  is_na(dt, which(names(dt) %in% cols)))
 
     # update: tests for any_na
-    test_no <<- test_no+.0001
+    test_no <<- test_no+0.0001
+    test(test_no, any_na(dt, cols), TRUE)
+    test_no <<- test_no+0.0001
+    test(test_no, any_na(ans, cols), FALSE)
+    test_no <<- test_no+0.0001
+    test(test_no, any_na(dt, names(dt) %in% cols),
+                  any_na(dt, which(names(dt) %in% cols)))
+    test_no <<- test_no+.00001
     test(test_no, any_na(dt[cols]), TRUE)
-    test_no <<- test_no+.0001
+    test_no <<- test_no+.00001
     test(test_no, any_na(ans[cols]), FALSE)
     TRUE
   })
 }
-## The function is_na now gains a "by" argument where we can specify the columns. Tests have not been added for that yet.
-## However, I've added tests for 'na.omit.data.table' that uses this internally. So we don't have to add tests here again.
-## See tests 1394.*
+
+# test some erroneous input as well, mostly for col_as_int()
+test_no = signif(test_no+.001, 7)
+test(test_no, any_na(dt, TRUE), error = "the input has to be of length")
+test_no = signif(test_no+.001, 7)
+test(test_no, any_na(dt, 0L), error = "outside 1-based range")
+test_no = signif(test_no+.001, 7)
+test(test_no, any_na(dt, length(dt) + 1L), error = "outside 1-based range")
+test_no = signif(test_no+.001, 7)
+test(test_no, any_na(dt, 0.0), error = "have to be in the range")
+test_no = signif(test_no+.001, 7)
+test(test_no, any_na(dt, length(dt) + 1.0), error = "have to be in the range")
+test_no = signif(test_no+.001, 7)
+test(test_no, any_na(dt, "XX"), error = "not exist in the input")
+test_no = signif(test_no+.001, 7)
+test(test_no, any_na(dt, list("AA")),
+     error = "specified as character/numeric/logical vectors")
+
+## See 1394.* (na.omit.data.table) for further tests which call is_na()
+## internally
 
 # extensive testing of overlap joins:
 
@@ -13777,8 +13775,8 @@ dimnames(DT) <- list(NULL, 1:5)
 test(1984.21, names(DT), paste0(1:5))
 DT = data.table(a = 1:10)
 test(1984.22, na.omit(DT, invert = 'a'), error="'invert' must be logical")
-test(1984.23, na.omit(DT, cols = 'b'), error="Column [b] doesn't")
-test(1984.24, na.omit(DT, cols = c('b', 'c')), error="Columns [b, c] don't")
+test(1984.23, na.omit(DT, cols = 'b'), error="Columns b does/do not exist")
+test(1984.24, na.omit(DT, cols = c('b', 'c')), error="Columns b,c does/do not exist")
 ### idcol = TRUE behavior of rbindlist
 test(1984.25, rbindlist(list(DT[1L], DT[2L]), idcol = TRUE), data.table(.id=1:2, a=1:2))
 test(1984.26, alloc.col(`*tmp*`), error='alloc.col attempting to modify `*tmp*`')
@@ -13810,6 +13808,9 @@ test(1984.37, class(setDT(l$df))[1L], error='not found in names of input list')
 DT = data.table(a = c(1:3, 3:1))
 test(1984.38, rowidv(DT, prefix = 5L), error='must be NULL or a character vector')
 test(1984.39, rowidv(DT, prefix = c('hey','you')), error='must be NULL or a character vector')
+test(1984.40, rowidv(DT$a, cols=1L), error="x is a single vector, non-NULL 'cols' doesn't make sense")
+test(1984.41, rowidv(DT, cols=integer()), error="x is a list, 'cols' can not be 0-length")
+test(1984.42, rowidv(DT$a), INT(1,1,1,2,2,2))
 
 # Test for #3349, foverlaps returned spurious results with POSIXct objects < 1970-01-01
 x <- data.table(val=178.41,s=as.POSIXct("1968-04-25 04:20:00"),e=as.POSIXct("1968-04-25 04:20:00"))
@@ -14973,7 +14974,7 @@ inner = data.table(a=1:3, b=1:3)
 outer = data.table(aa=1, ab=list(inner))
 old = options(datatable.verbose=TRUE)
 test(2049.1, outer$ab[[1]]$b <- 4L, 4L,    # also tests the incorrect warning has gone
-             output="RHS_list_of_columns revised to false .df=0.*RHS_list_of_columns revised to false .df=1")
+             output="RHS_list_of_columns revised to false")  # TODO: reinstate (temp off in fork): .df=0.*RHS_list_of_columns revised to false .df=1")
 options(old)
 test(2049.2, outer$ab, list(data.table(a=1:3, b=4L)))
 test(2049.3, outer$ab[[1]][, b := 5L], data.table(a=1:3, b=5L))
@@ -14994,12 +14995,15 @@ test(2051.1, `-.IDate`(structure(0, class="Date"), 1L), structure(-1, class="Dat
 test(2051.2, `-.IDate`(1L, 1L), error = 'only subtract from "IDate"')
 test(2051.3, format.data.table(1L), error = 'Possibly corrupt data.table')
 test(2051.4, rleidv(prefix = 1L), error = 'prefix must be NULL or')
+test(2051.5, rleidv(1:5, cols=1L), error="x is a single vector, non-NULL 'cols' doesn't make sense")
+test(2051.6, rleidv(list(1:5), cols=integer()), error="x is a list, 'cols' can not be 0-length")
+test(2051.7, rleidv(c(1,2,1,1,2)), INT(1,2,3,3,4))
 ## passing Date to second argument of as.POSIXct.ITime
 t = as.ITime(0L)
-test(2051.5, as.POSIXct(t, structure(0L, class="Date")), .POSIXct(0, 'UTC'))
+test(2051.8, as.POSIXct(t, structure(0L, class="Date")), .POSIXct(0, 'UTC'))
 ## forder of dynamic expression
 DT = data.table(a = 1:3)
-test(2051.6, DT[order(sin(a/pi))], DT)
+test(2051.9, DT[order(sin(a/pi))], DT)
 
 # rbindlist ordered factor with an NA level, #3601
 dt1 = structure(list(V1 = c("2016", "2016", "2016", "2016", "2016"),

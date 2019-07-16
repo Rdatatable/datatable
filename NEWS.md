@@ -380,6 +380,8 @@
 
     If a superclass defines attributes that may not be valid after a `[` subset then the superclass should implement its own `[` method to manage those after calling `NextMethod()`.
 
+3. `is_na()` and `any_na()` for row-wise checking for `NA` entries are now exported (see [#3016](https://github.com/Rdatatable/data.table/issues/3016)). Thanks to @nbenn for reporting and for the PR.
+
 #### BUG FIXES
 
 1. Providing an `i` subset expression when attempting to delete a column correctly failed with helpful error, but when the column was missing too created a new column full of `NULL` values, [#3089](https://github.com/Rdatatable/data.table/issues/3089). Thanks to Michael Chirico for reporting.

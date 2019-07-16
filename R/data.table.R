@@ -513,7 +513,7 @@ replace_order = function(isub, verbose, env) {
           f__ = ans[[1L]]; len__ = ans[[2L]]
           allLen1 = FALSE # TODO; should this always be FALSE?
           irows = NULL # important to reset
-          if (any_na(as_list(xo))) xo = xo[!is.na(xo)]
+          if (anyNA(xo)) xo = xo[!is.na(xo)]
         }
       } else {
         if (!byjoin) { #1287 and #1271
@@ -1092,7 +1092,7 @@ replace_order = function(isub, verbose, env) {
                   j = match(j, names(k))
                   if (is.na(j)) stop("Item '",origj,"' not found in names of list")
                 }
-                .Call(Csetlistelt,k,as.integer(j), x)
+                .Call(Csetlistelt,k,as.integer(j), x)  # needs to be Csetlistelt to achieve the by-reference assign
               } else if (is.environment(k) && exists(as.character(name[[3L]]), k)) {
                 assign(as.character(name[[3L]]), x, k, inherits=FALSE)
               }
@@ -2170,24 +2170,23 @@ subset.data.table = function (x, subset, select, ...)
 
 # Equivalent of 'rowSums(is.na(dt) > 0L)' but much faster and memory efficient.
 # Also called "complete.cases" in base. Unfortunately it's not a S3 generic.
-# Also handles bit64::integer64. TODO: export this?
-# For internal use only. 'by' requires integer input. No argument checks here yet.
-is_na = function(x, by=seq_along(x)) .Call(Cdt_na, x, by)
-any_na = function(x, by=seq_along(x)) .Call(CanyNA, x, by)
+# Also handles bit64::integer64.
+is_na = function(x, by = seq_along(x)) {
+  if (!is.integer(by)) by <- col_as_int(x, by)
+  .Call(Cdt_na, x, by)
+}
+
+any_na = function(x, by = seq_along(x)) {
+  if (!is.integer(by)) by <- col_as_int(x, by)
+  .Call(CanyNA, x, by)
+}
 
 na.omit.data.table = function (object, cols = seq_along(object), invert = FALSE, ...) {
   # compare to stats:::na.omit.data.frame
   if (!cedta()) return(NextMethod())
   if ( !missing(invert) && is.na(as.logical(invert)) )
     stop("Argument 'invert' must be logical TRUE/FALSE")
-  if (is.character(cols)) {
-    old = cols
-    cols = chmatch(cols, names(object), nomatch=0L)
-    if (any(idx <- cols==0L))
-      stop("Column", if (sum(idx)>1L) "s " else " ", brackify(old[idx]), if (sum(idx)>1L) " don't" else " doesn't", " exist in the input data.table")
-  }
-  cols = as.integer(cols)
-  ix = .Call(Cdt_na, object, cols)
+  ix = is_na(object, cols)
   # forgot about invert with no NA case, #2660
   if (invert) {
     if (all(ix))
@@ -2531,15 +2530,14 @@ setcolorder = function(x, neworder=key(x))
   invisible(x)
 }
 
-set = function(x,i=NULL,j,value)  # low overhead, loopable
+set = function(x, i=NULL, j, value)  # low overhead, loopable
 {
-  if (is.atomic(value)) {
-    # protect NAMED of atomic value from .Call's NAMED=2 by wrapping with list()
-    l = vector("list", 1L)
-    .Call(Csetlistelt,l,1L,value)  # to avoid the copy by list() in R < 3.1.0
-    value = l
-  }
-  .Call(Cassign,x,i,j,NULL,value)
+  # value used to be wrapped with list() here (using Csetlistelt to avoid list() copy with R<3.1.0) with following comment :
+  #    "protect NAMED of atomic value from .Call's NAMED=2 by wrapping with list()"
+  #    "to avoid the copy by list() in R < 3.1.0"
+  # Should no longer be necessary since R 3.1.0
+
+  .Call(Cassign, x, i, j, newcolnames=NULL, value)
   invisible(x)
 }
 
@@ -2740,19 +2738,13 @@ setDT = function(x, keep.rownames=FALSE, key=NULL, check.names=FALSE) {
             stop("Item '", origj, "' not found in names of input list")
         }
       }
-      .Call(Csetlistelt,k,as.integer(j), x)
+      .Call(Csetlistelt,k,as.integer(j), x)  # needs to be Csetlistelt to achieve the by-reference assign
     } else if (is.environment(k) && exists(as.character(name[[3L]]), k)) {
       assign(as.character(name[[3L]]), x, k, inherits=FALSE)
     }
   }
   .Call(CexpandAltRep, x)  # issue#2866 and PR#2882
   invisible(x)
-}
-
-as_list = function(x) {
-  lx = vector("list", 1L)
-  .Call(Csetlistelt, lx, 1L, x)
-  lx
 }
 
 # FR #1353
@@ -2767,10 +2759,10 @@ rowidv = function(x, cols=seq_along(x), prefix=NULL) {
     if (!missing(cols) && !is.null(cols))
       stop("x is a single vector, non-NULL 'cols' doesn't make sense.")
     cols = 1L
-    x = as_list(x)
+    x = list(x)
   } else {
     if (!length(cols))
-      stop("x is a list, 'cols' can not be on 0-length.")
+      stop("x is a list, 'cols' can not be 0-length")
     if (is.character(cols))
       cols = chmatch(cols, names(x))
     cols = as.integer(cols)
@@ -2796,7 +2788,7 @@ rleidv = function(x, cols=seq_along(x), prefix=NULL) {
     if (!missing(cols) && !is.null(cols))
       stop("x is a single vector, non-NULL 'cols' doesn't make sense.")
     cols = 1L
-    x = as_list(x)
+    x = list(x)
   } else {
     if (!length(cols))
       stop("x is a list, 'cols' can not be 0-length.")
@@ -2907,7 +2899,7 @@ isReallyReal = function(x) {
     if (!operator %chin% c("%in%", "%chin%")) {
       # additional requirements for notjoin and NA values. Behaviour is different for %in%, %chin% compared to other operators
       # RHS is of length=1 or n
-      if (any_na(as_list(RHS))) {
+      if (anyNA(RHS)) {
         ## dt[x == NA] or dt[x <= NA] will always return empty
         notjoin = FALSE
         RHS = RHS[0L]
