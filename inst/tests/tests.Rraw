@@ -805,7 +805,7 @@ DT = data.table(pool = c(1L, 1L, 2L), bal = c(10, 20, 30))
 test(280, DT[, list(bal[0], bal[1]), by=pool], data.table(pool=1:2, V1=NA_real_, V2=c(10,30)))
 test(281, DT[, list(bal[1], bal[0]), by=pool], data.table(pool=1:2, V1=c(10,30), V2=NA_real_))
 # Test 2nd group too (the 1st is special) ...
-test(282, DT[, list(bal[ifelse(pool==1,1,0)], bal[1]), by=pool], data.table(pool=1:2, V1=c(10,NA), V2=c(10,30)))
+test(282, DT[, list(bal[fifelse(pool==1,1,0)], bal[1]), by=pool], data.table(pool=1:2, V1=c(10,NA), V2=c(10,30)))
 
 # More tests based on Andreas Borg's post of 11 May 2011.
 DT = data.table(x=INT(0,0,1,0,1,1), y=INT(1,1,0,1,1,1), z=1:6)
@@ -15864,6 +15864,14 @@ test(2095, any(grepl('override', capture.output(dcast(DT, a~b, fun.aggregate=len
 # gmean intermediate can overflow integers without warning, #986
 test(2096, data.table(a=c(1L,1L), v=c(2e9L, 2e9L))[, mean(v), a], data.table(a=1L, V1=2e9))
 
+# #2677 -- emit warnings when ifelse is used in j (only for high optim _for now_)
+optim = options(datatable.optimize=0L)
+DT = data.table(a=1:10)
+test(2097.1, DT[ , ifelse(a > 5, 1, -1)], rep(c(-1, 1), each=5L))
+options(datatable.optimize=3L)
+test(2097.3, DT[ , ifelse(a > 5, 1, -1)], rep(c(-1, 1), each=5L),
+     warning="ifelse() usage detected and converted")
+options(optim)
 
 ###################################
 #  Add new tests above this line  #
