@@ -219,4 +219,3 @@ status()
 
 # Now R prompt is ready to fix any problems with CRAN or Bioconductor updates.
 # Then run run(), status() and log() as per section in CRAN_Release.cmd
-

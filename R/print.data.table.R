@@ -8,7 +8,7 @@ print.data.table = function(x, topn=getOption("datatable.print.topn"),
                print.keys=getOption("datatable.print.keys"),
                trunc.cols=getOption("datatable.print.trunc.cols"),
                quote=FALSE,
-               timezone=FALSE, ...) {
+               ...) {
   # topn  - print the top topn and bottom topn rows with '---' inbetween (5)
   # nrows - under this the whole (small) table is printed, unless topn is provided (100)
   # class - should column class be printed underneath column name? (FALSE)
@@ -68,7 +68,8 @@ print.data.table = function(x, topn=getOption("datatable.print.topn"),
     rn = seq_len(nrow(x))
     printdots = FALSE
   }
-  toprint=format.data.table(toprint, na.encode=FALSE, timezone = timezone, ...)  # na.encode=FALSE so that NA in character cols print as <NA>
+  toprint=format.data.table(toprint, na.encode=FALSE, ...)  # na.encode=FALSE so that NA in character cols print as <NA>
+
   require_bit64_if_needed(x)
 
   # FR #5020 - add row.names = logical argument to print.data.table
@@ -135,44 +136,11 @@ print.data.table = function(x, topn=getOption("datatable.print.topn"),
   invisible(x)
 }
 
-format.data.table = function (x, ..., justify="none", timezone = FALSE) {
+format.data.table <- function (x, ..., justify="none") {
   if (is.atomic(x) && !is.null(x)) {
     stop("Internal structure doesn't seem to be a list. Possibly corrupt data.table.")
   }
-  format.item = function(x) {
-    if (is.null(x))  # NULL item in a list column
-      ""
-    else if (is.atomic(x) || inherits(x,"formula")) # FR #2591 - format.data.table issue with columns of class "formula"
-      paste(c(format(head(x, 6L), justify=justify, ...), if (length(x) > 6L) "..."), collapse=",")  # fix for #5435 - format has to be added here...
-    else
-      paste0("<", class(x)[1L], ">")
-  }
-  # FR #2842 add timezone for posix timestamps
-  format.timezone = function(col) { # paste timezone to a time object
-    tz = attr(col,'tzone', exact=TRUE)
-    if (!is.null(tz)) { # date object with tz
-      nas = is.na(col)
-      col = paste0(as.character(col)," ",tz) # parse to character
-      col[nas] = NA_character_
-    }
-    return(col)
-  }
-  # FR #1091 for pretty printing of character
-  # TODO: maybe instead of doing "this is...", we could do "this ... test"?
-  char.trunc = function(x, trunc.char = getOption("datatable.prettyprint.char")) {
-    trunc.char = max(0L, suppressWarnings(as.integer(trunc.char[1L])), na.rm=TRUE)
-    if (!is.character(x) || trunc.char <= 0L) return(x)
-    idx = which(nchar(x) > trunc.char)
-    x[idx] = paste0(substr(x[idx], 1L, as.integer(trunc.char)), "...")
-    x
-  }
-  do.call("cbind",lapply(x,function(col,...) {
-    if (!is.null(dim(col))) return("<multi-column>")
-    if(timezone) col = format.timezone(col)
-    if (is.list(col)) col = vapply_1c(col, format.item)
-    else col = format(char.trunc(col), justify=justify, ...) # added an else here to fix #5435
-    col
-  },...))
+  do.call("cbind", lapply(x, format_col, ..., justify=justify))
 }
 
 mimicsAutoPrint = c("knit_print.default")
@@ -188,6 +156,44 @@ shouldPrint = function(x) {
 # for removing the head (column names) of matrix output entirely,
 #   as opposed to printing a blank line, for excluding col.names per PR #1483
 cut_top = function(x) cat(capture.output(x)[-1L], sep = '\n')
+
+format_col = function(x, ...) {
+  UseMethod("format_col")
+}
+
+format_list_item = function(x, ...) {
+  UseMethod("format_list_item")
+}
+
+format_col.default = function(x, ...) {
+  if (!is.null(dim(x))) return("<multi-column>")
+  if (is.list(x)) return(vapply_1c(x, format_list_item, ...))
+  format(char.trunc(x), ...) # added an else here to fix #5435
+}
+
+# #2842 -- different columns can have different tzone, so force usage in output
+format_col.POSIXct = function(x, ...) format(x, usetz = TRUE, ...)
+
+# #3011 -- expression columns can wrap to newlines which breaks printing
+format_col.expression = function(x, ...) format(char.trunc(as.character(x)), ...)
+
+format_list_item.default = function(x, ...) {
+  if (is.null(x)) return ("") # NULL item in a list column
+  if (is.atomic(x) || inherits(x, "formula")) # FR #2591 - format.data.table issue with columns of class "formula"
+    paste(c(format(head(x, 6L), ...), if (length(x) > 6L) "..."), collapse=",")  # fix for #5435 - format has to be added here...
+  else
+    paste0("<", class(x)[1L], ">")
+}
+
+# FR #1091 for pretty printing of character
+# TODO: maybe instead of doing "this is...", we could do "this ... test"?
+char.trunc <- function(x, trunc.char = getOption("datatable.prettyprint.char")) {
+  trunc.char = max(0L, suppressWarnings(as.integer(trunc.char[1L])), na.rm=TRUE)
+  if (!is.character(x) || trunc.char <= 0L) return(x)
+  idx = which(nchar(x) > trunc.char)
+  x[idx] = paste0(substr(x[idx], 1L, as.integer(trunc.char)), "...")
+  x
+}
 
 # to calculate widths of data.table for PR #4074
 # gets the width of the data.table at each column
@@ -224,4 +230,3 @@ trunc_cols_message = function(not_printed, abbs, class, col.names){
     n, brackify(paste0(not_printed, classes))
   ))
 }
-

@@ -88,4 +88,3 @@ cc = function(test=TRUE, clean=FALSE, debug=FALSE, omp=!debug, cc_dir, path=Sys.
 }
 
 dd = function(omp=FALSE)cc(FALSE,debug=TRUE,omp=omp,clean=TRUE)
-

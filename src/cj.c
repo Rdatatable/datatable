@@ -93,4 +93,3 @@ SEXP cj(SEXP base_list) {
   UNPROTECT(1);
   return out;
 }
-

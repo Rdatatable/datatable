@@ -93,4 +93,3 @@ SEXP transpose(SEXP l, SEXP fill, SEXP ignoreArg, SEXP keepNamesArg) {
   UNPROTECT(nprotect);
   return ans;
 }
-

@@ -33,4 +33,3 @@ fcoalesce(list(x,y,z))   # same
 fcoalesce(x, list(y,z))  # same
 }
 \keyword{ data }
-
