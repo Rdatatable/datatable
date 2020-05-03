@@ -38,7 +38,8 @@ int getMaxStringLen(const SEXP *col, const int64_t n) {
 
 int getMaxCategLen(SEXP col) {
   col = getAttrib(col, R_LevelsSymbol);
-  if (!isString(col)) error(_("Internal error: col passed to getMaxCategLen is missing levels"));
+  if (!isString(col))
+    error(_("Internal error: col passed to getMaxCategLen is missing levels")); // # nocov
   return getMaxStringLen( STRING_PTR(col), LENGTH(col) );
 }
 
@@ -100,7 +101,8 @@ int getMaxListItemLen(const SEXP *col, const int64_t n) {
     }
     int width = writerMaxLen[wf];
     if (width==0) {
-      if (wf!=WF_String) STOP(_("Internal error: row %"PRId64" of list column has no max length method implemented"), i+1); // # nocov
+      if (wf!=WF_String)
+        STOP(_("Internal error: row %"PRId64" of list column has no max length method implemented"), i+1); // # nocov
       const int l = LENGTH(this);
       for (int j=0; j<l; ++j) width+=LENGTH(STRING_ELT(this, j));
     } else {
@@ -167,7 +169,8 @@ SEXP fwriteR(
   SEXP verbose_Arg
   )
 {
-  if (!isNewList(DF)) error(_("fwrite must be passed an object of type list; e.g. data.frame, data.table"));
+  if (!isNewList(DF))
+    error(_("Internal error: fwrite received non-list input; this should have been caught earlier.")); // # nocov
   fwriteMainArgs args;
   args.is_gzip = LOGICAL(is_gzip_Arg)[0];
   args.bom = LOGICAL(bom_Arg)[0];

@@ -64,7 +64,7 @@ bool allNA(SEXP x, bool errorForBadType) {
     return true;
   case CPLXSXP: {
     const Rcomplex *xd = COMPLEX(x);
-    for (int i=0; i<n; ++i) if (!ISNAN_COMPLEX(xd[i])) { 
+    for (int i=0; i<n; ++i) if (!ISNAN_COMPLEX(xd[i])) {
       return false;
     }
     return true;
@@ -142,7 +142,8 @@ SEXP colnamesInt(SEXP x, SEXP cols, SEXP check_dups) {
 }
 
 void coerceFill(SEXP fill, double *dfill, int32_t *ifill, int64_t *i64fill) {
-  if (xlength(fill) != 1) error(_("%s: fill argument must be length 1"), __func__);
+  if (xlength(fill) != 1)
+    error(_("%s: fill argument must be length 1"), __func__);
   if (isInteger(fill)) {
     if (INTEGER(fill)[0]==NA_INTEGER) {
       ifill[0] = NA_INTEGER; dfill[0] = NA_REAL; i64fill[0] = NA_INTEGER64;
@@ -205,7 +206,7 @@ inline bool INHERITS(SEXP x, SEXP char_) {
   // Thread safe in the limited sense of correct and intended usage :
   // i) no API call such as install() or mkChar() must be passed in.
   // ii) no attrib writes must be possible in other threads.
-  SEXP klass;
+  SEXP klass; // klass not class at request of pydatatable because class is reserved word in C++, PR #3129
   if (isString(klass = getAttrib(x, R_ClassSymbol))) {
     for (int i=0; i<LENGTH(klass); i++) {
       if (STRING_ELT(klass, i) == char_) return true;
