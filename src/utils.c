@@ -363,3 +363,48 @@ SEXP coerceUtf8IfNeeded(SEXP x) {
   return(ans);
 }
 
+SEXP coerceAsList(SEXP x, int len, int *nprotect) {
+  SEXP coerced;
+  if (TYPEOF(x)==VECSXP) {
+    return(x);
+  } if (TYPEOF(x) == LISTSXP) {
+    coerced = PROTECT(coerceVector(x, VECSXP)); (*nprotect)++; // top level pairlist converted to regular list
+  } else if (isVector(x)) {
+    // Allocate VECSXP container, 
+    coerced = PROTECT(allocVector(VECSXP, length(x))); (*nprotect)++;
+    for(int i=0; i<length(x); ++i) {
+      // Allocate length-1 vector of appropriate type and set it in the right place in the VECSXP container
+      SEXP thisElement = PROTECT(allocVector(TYPEOF(x), 1)); (*nprotect)++;
+      SET_VECTOR_ELT(coerced, i, thisElement); UNPROTECT(1); (*nprotect)--; // thisElement now PROTECTED in coerced
+      
+      // Copy any class attributes from x into each element of coerced
+      // Must happen before memrecycle for memrecycle to handle class
+      // correctly (currently only relevant for integer64)
+      copyMostAttrib(x, thisElement); 
+      
+      // Use memrecycle to give each list element the correct value
+      const char *ret = memrecycle(thisElement, R_NilValue, 0, 1, x, i, 1, 0, "V1");
+      if (ret) error(_("Internal Error: memrecycle could not copy vector element into list")); // # nocov
+      // ret > 0 should be impossible because TYPEOF(thisElement) == TYPEOF(x)
+    }
+  } else if (!isVector(x)) { 
+    // Anything not a vector we can assign directly through SET_VECTOR_ELT
+    // Although tecnically there should only be one list element for any type met here,
+    // the length of the type may be > 1, in which case the other columns in data.table
+    // will have been recycled. We therefore in turn have to recycle the list elements
+    // to match the number of rows.
+    if (len < 1) // len used here instead of length(x) because length(x) does not reflect length of target vector data.table
+      error("Internal Error: len provided to C function coerceAsList must be > 0\n"); // # nocov
+    coerced = PROTECT(allocVector(VECSXP, len)); (*nprotect)++;
+    for(int i=0; i<len; ++i) {
+      SET_VECTOR_ELT(coerced, i, x);
+    }
+  } else {
+    // should be unreachable
+    error("Internal error: cannot coerce type %s to list\n", type2char(TYPEOF(x))); // # nocov
+  }
+  
+  // *nprotect should have been incremented by just 1 here - 'coerced' 
+  // should be at the top of the PROTECT stack.
+  return(coerced);
+}
