@@ -16861,3 +16861,21 @@ A = data.table(A=c(complex(real = 1:3, imaginary=c(0, -1, 1)), NaN))
 test(2138.3, rbind(A,B), data.table(A=c(as.character(A$A), B$A)))
 A = data.table(A=as.complex(rep(NA, 5)))
 test(2138.4, rbind(A,B), data.table(A=c(as.character(A$A), B$A)))
+
+# fcase supports vector default values, #4258
+# for default
+test(2139.01, fcase(c(TRUE, FALSE, NA, NA), 1:4, default = 11:13), error = "Length of 'default' must be 1 or 4.")
+test(2139.02, fcase(c(TRUE, FALSE, NA, NA), 1:4, default = 11:14), c(1L, 12:14)) # int
+test(2139.03, fcase(c(TRUE, FALSE, NA, NA), 1:4 + 0.1, default = 11:14 + 0.1), c(1L, 12:14) + 0.1) # double
+test(2139.04, fcase(c(TRUE, FALSE, NA, NA), as.character(1:4), default = as.character(11:14)), as.character(c(1L, 12:14))) # string
+test(2139.05, fcase(c(TRUE, FALSE, NA, NA), as.list(1:4), default = as.list(11:14)), as.list(c(1L, 12:14))) # list
+test(2139.06, fcase(c(TRUE, FALSE, NA, NA), (1:4)+1i, default = (11:14)+1i), c(1L, 12:14)+1i) # complex
+# for scalar condition
+test(2139.07, fcase(c(TRUE, FALSE, NA, NA), 1:4, TRUE, 11:13), error = "Length of output value #4 must either be 1 or length of logical condition")
+test(2139.08, fcase(c(TRUE, FALSE, NA, NA), 1:4, TRUE, 11:14), c(1L, 12:14)) # int
+test(2139.09, fcase(c(TRUE, FALSE, NA, NA), 1:4 + 0.1, TRUE, 11:14 + 0.1), c(1L, 12:14) + 0.1) # double
+test(2139.10, fcase(c(TRUE, FALSE, NA, NA), as.character(1:4), TRUE, as.character(11:14)), as.character(c(1L, 12:14))) # string
+test(2139.11, fcase(c(TRUE, FALSE, NA, NA), as.list(1:4), TRUE, as.list(11:14)), as.list(c(1L, 12:14))) # list
+test(2139.12, fcase(c(TRUE, FALSE, NA, NA), (1:4)+1i, TRUE, (11:14)+1i), c(1L, 12:14)+1i) # complex
+test(2139.13, fcase(TRUE, 1L, default = stop("lazy eval")), 1L) # default is lazy evaled
+test(2139.14, fcase(c(TRUE, FALSE), 1L, c(TRUE, TRUE), NA), c(1L, NA_integer_)) # scalar NA will be convered
