@@ -124,6 +124,40 @@ do_patterns = function(pat_sub, all_cols) {
   return(matched)
 }
 
+
+generate_yaml = function(x, col.names = TRUE, sep = ",", sep2 = "", 
+                          eol = if (.Platform$OS.type == "windows") "\r\n" else "\n",
+                          na = "", dec = "", qmethod = "double", 
+                          logical01 = getOption("datatable.logical01", FALSE)) {
+  fields = sapply(seq_along(x), function(i) {
+    attrs <- attributes(x[[i]])
+    attrs <- attrs[!(names(attrs) %in% "class")]
+    
+    ret <- list(name = colnames(x)[i],
+                type = class(x[[i]])[[1]])  # multi-class objects reduced to first class
+    
+    if (!is.null(attrs) & length(attrs) != 0) {
+      ret <- c(ret, list(attributes = attrs))
+    }
+    return(ret)
+  }, simplify = FALSE)
+  
+  list(
+    source = sprintf('R[v%s.%s]::data.table[v%s]::fwrite',
+                     R.version$major, R.version$minor, format(tryCatch(utils::packageVersion('data.table'), error=function(e) 'DEV'))),
+    creation_time_utc = format(Sys.time(), tz='UTC'),
+    schema = list(fields = fields), 
+    header = col.names,
+    sep = sep,
+    sep2 = sep2, 
+    eol = eol, 
+    na.strings = na,
+    dec = dec,
+    qmethod = qmethod, 
+    logical01 = logical01
+  )
+}
+
 # check UTC status
 is_utc = function(tz) {
   # via grep('UTC|GMT', OlsonNames(), value = TRUE); ordered by "prior" frequency
