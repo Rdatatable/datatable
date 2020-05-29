@@ -16881,3 +16881,25 @@ A = data.table(A=c(complex(real = 1:3, imaginary=c(0, -1, 1)), NaN))
 test(2138.3, rbind(A,B), data.table(A=c(as.character(A$A), B$A)))
 A = data.table(A=as.complex(rep(NA, 5)))
 test(2138.4, rbind(A,B), data.table(A=c(as.character(A$A), B$A)))
+
+# rowwisely creating a data.table
+DT = rowwiseDT(
+  A=, B=,
+  1, "a"
+)
+test(2139.01, DT, data.table(A = 1, B = "a"))
+# error if named argument is not empty
+test(2139.02, rowwiseDT(A=,B=2,1,2), error="Named arguments must be empty")
+# error if no header
+test(2139.03, rowwiseDT(1,"a"), error = "Must provide at least one column")
+# error if body is not multiple length of the header
+test(2139.04, rowwiseDT(A=,B=,C=, 1,"a",2,"b",3), error = "There're 3 columns but the number of cells is 5, which is not an integer multiple of the columns")
+# create list element automatically
+test(2139.05, rowwiseDT(A=,list(1)), data.table(A=list(1)))
+test(2139.06, rowwiseDT(A=,1:2), data.table(A=list(1:2)))
+test(2139.07, rowwiseDT(A=,double()), data.table(A=list(double())))
+# error if named argument is in the middle
+test(2139.08, rowwiseDT(A=,B=,1,2,C=,4), error="Header must be the first N arguments")
+# evaluate arguments in the correct frame
+ncols = 1e6
+test(2139.09, rowwiseDT(A=,ncols), data.table(A=ncols))

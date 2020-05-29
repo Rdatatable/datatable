@@ -81,6 +81,23 @@ unit = "s")
 
 14. Added support for `round()` and `trunc()` to extend functionality of `ITime`. `round()` and `trunc()` can be used with argument units: "hours" or "minutes". Thanks to @JensPederM for the suggestion and PR.
 
+15. Introduce a new function `rowwiseDT()`. It can be used to create a data.table object "rowwisely". Thanks to @shrektan for the suggestion and PR, @tdeenes for the idea of the `name=` syntax.
+
+```r
+library(data.table)
+rowwiseDT(
+  a=,b=,c=,  d=,
+  1, 2, "a", (2:3),
+  3, 4, "b", list("e"),
+  5, 6, "c", ~a+b,
+)
+#>        a     b      c      d
+#>    <num> <num> <char> <list>
+#> 1:     1     2      a    2,3
+#> 2:     3     4      b      e
+#> 3:     5     6      c ~a + b
+```
+
 ## BUG FIXES
 
 1. A NULL timezone on POSIXct was interpreted by `as.IDate` and `as.ITime` as UTC rather than the session's default timezone (`tz=""`) , [#4085](https://github.com/Rdatatable/data.table/issues/4085).
