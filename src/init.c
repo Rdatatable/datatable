@@ -58,6 +58,7 @@ SEXP fwriteR();
 SEXP reorder();
 SEXP rbindlist();
 SEXP vecseq();
+SEXP seqexp();
 SEXP setlistelt();
 SEXP address();
 SEXP expandAltRep();
@@ -119,6 +120,7 @@ SEXP lock();
 SEXP unlock();
 SEXP islockedR();
 SEXP allNAR();
+SEXP copyCols();
 
 // .Externals
 SEXP fastmean();
@@ -144,6 +146,7 @@ R_CallMethodDef callMethods[] = {
 {"Creorder", (DL_FUNC) &reorder, -1},
 {"Crbindlist", (DL_FUNC) &rbindlist, -1},
 {"Cvecseq", (DL_FUNC) &vecseq, -1},
+{"Cseqexp", (DL_FUNC) &seqexp, -1},
 {"Csetlistelt", (DL_FUNC) &setlistelt, -1},
 {"Caddress", (DL_FUNC) &address, -1},
 {"CexpandAltRep", (DL_FUNC) &expandAltRep, -1},
@@ -211,6 +214,9 @@ R_CallMethodDef callMethods[] = {
 {"CfrollapplyR", (DL_FUNC) &frollapplyR, -1},
 {"CtestMsgR", (DL_FUNC) &testMsgR, -1},
 {"C_allNAR", (DL_FUNC) &allNAR, -1},
+{"Ccbindlist", (DL_FUNC) &cbindlist, -1},
+{"CperhapsDataTableR", (DL_FUNC) &perhapsDataTableR, -1},
+{"CcopyCols", (DL_FUNC) &copyCols, -1},
 {NULL, NULL, 0}
 };
 

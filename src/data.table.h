@@ -137,6 +137,7 @@ SEXP int_vec_init(R_len_t n, int val);
 
 // vecseq.c
 SEXP vecseq(SEXP x, SEXP len, SEXP clamp);
+SEXP seqexp(SEXP x);
 
 // uniqlist.c
 SEXP uniqlist(SEXP l, SEXP order);
@@ -234,6 +235,13 @@ bool islocked(SEXP x);
 SEXP islockedR(SEXP x);
 bool need2utf8(SEXP x);
 SEXP coerceUtf8IfNeeded(SEXP x);
+int NROW(SEXP x);
+int NCOL(SEXP x);
+bool isDataTable(SEXP x);
+bool isDataFrame(SEXP x);
+bool isDataList(SEXP x);
+bool perhapsDataTable(SEXP x);
+SEXP perhapsDataTableR(SEXP x);
 
 // types.c
 char *end(char *start);
@@ -243,3 +251,6 @@ SEXP testMsgR(SEXP status, SEXP x, SEXP k);
 //fifelse.c
 SEXP fifelseR(SEXP l, SEXP a, SEXP b, SEXP na);
 SEXP fcaseR(SEXP na, SEXP rho, SEXP args);
+
+// mergelist.c
+SEXP cbindlist(SEXP x, SEXP copyArg);
