@@ -3642,7 +3642,7 @@ test(1118, dt[, lapply(.SD, function(y) weighted.mean(y, b2, na.rm=TRUE)), by=x]
 
 # a(nother) test of #295
 DT <- data.table(x=5:1, y=1:5, key="y")
-test(1119, is.null(key(DT[, list(z = y, y = 1/y)])))
+test(1119, key(DT[, list(z = y, y = 1/y)]), 'z')
 
 ## various ordered factor rbind tests
 DT1 = data.table(ordered('a', levels = c('a','b','c')))
@@ -16947,3 +16947,9 @@ if (.Platform$OS.type=="windows") local({
 # test back to English (the argument order is back to 1,c,2,1)
 test(2144, rbind(DT,list(c=4L,a=7L)), error="Column 1 ['c'] of item 2 is missing in item 1") 
 
+# sub-key can also be retained in plain query, part of #4498
+DT = data.table(id = rep(1:10, 2L), grp = rep(1:2, each=10L), V = 1:20/13, key=c('id', 'grp'))
+test(2145.1, key(DT[ , .(id)]), 'id')
+test(2145.2, key(DT[ , .(grp)]), NULL)
+## renaming also caught
+test(2145.3, key(DT[ , .(newid = id, newgrp = grp)]), c('newid', 'newgrp'))
