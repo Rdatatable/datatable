@@ -17150,3 +17150,21 @@ test(2154.1, fread("0.0\n", colClasses="integer"), data.table(V1=0.0),
 test(2154.2, fread("A\n0.0\n", colClasses="integer"), data.table(A=0.0),
              warning="Attempt to override column 1 <<A>> of inherent type 'float64' down to 'int32' ignored.*please")
 
+a = c(1L,1L,2L,2L,3L,3L,4L,4L)
+bi = c(NA, NA, NA, 1L:4L, NA)
+bs = c(NA, NA, NA, letters[1:4], NA)
+DT = data.table(a,bi,bs)
+test(2155.01, first(bi, na.rm=TRUE), 1L)
+test(2155.02, last(bi, na.rm=TRUE), 4L)
+test(2155.03, DT[, .(first(bi, na.rm=TRUE)), a], data.table(a=1L:4L, V1=c(NA,1L,2L,4L)))
+test(2155.04, DT[, .(last(bi, na.rm=TRUE)), a], data.table(a=1L:4L, V1=c(NA,1L,3L,4L)))
+test(2155.05, DT[, .(first(bs, na.rm=TRUE)), a], data.table(a=1L:4L, V1=c(NA,"a","b","d")))
+test(2155.06, DT[, .(last(bs, na.rm=TRUE)), a], data.table(a=1L:4L, V1=c(NA,"a","c","d")))
+test(2155.07, first(DT, na.rm=TRUE), data.table(a=2L, bi=1L, bs="a"))
+test(2155.08, setDT(last(DT, na.rm=TRUE)), data.table(a=4L, bi=4L, bs="d")) #see #3047 why setDT
+comp = c(NA, NA, NA, sapply(-1:-4, as.complex), NA)
+DT = data.table(a, comp)
+test(2155.09, DT[, .(first(comp, na.rm=TRUE)), a], 
+  data.table(a=1L:4L, V1=c(NA_complex_,-1+0i,-2+0i,-4+0i)))
+test(2155.10, DT[, .(last(comp, na.rm=TRUE)), a], 
+  data.table(a=1L:4L, V1=c(NA_complex_,-1+0i,-3+0i,-4+0i)))
