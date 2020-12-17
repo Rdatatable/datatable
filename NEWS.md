@@ -4,6 +4,22 @@
 
 # data.table [v1.13.7](https://github.com/Rdatatable/data.table/milestone/20)  (in development)
 
+## NEW FEATURES
+
+1. New helper function `fctr` has been added, [#4837](https://github.com/Rdatatable/data.table/issues/4837). It is wrapper around base R `factor` using default arguments adjusted to retain original order. It has been added for convenience in case when order of elements needs be preserved, for example when using `dcast` or adding legend to plot.
+
+```r
+d = data.table(id1=1:2, id2=letters[c(4:3,3:4)], v1=1:4)
+dcast(d, id1 ~ id2)
+#     id1     c     d
+#1:     1     3     1
+#2:     2     2     4
+dcast(d, id1 ~ fctr(id2))
+#     id1     d     c
+#1:     1     1     3
+#2:     2     4     2
+```
+
 ## BUG FIXES
 
 ## NOTES

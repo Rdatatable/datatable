@@ -140,3 +140,10 @@ edit.data.table = function(name, ...) {
   setDT(NextMethod('edit', name))[]
 }
 # nocov end
+
+# convert char to factor retaining order #4837
+fctr = function(x, levels=unique(x), ..., rev=FALSE) {
+  if (!isTRUEorFALSE(rev))
+    stop("argument 'rev' must be TRUE or FALSE")
+  factor(x, levels=if (rev) rev(levels) else levels, ...)
+}
