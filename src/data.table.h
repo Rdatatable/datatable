@@ -94,6 +94,10 @@ extern SEXP sym_index;
 extern SEXP sym_BY;
 extern SEXP sym_starts, char_starts;
 extern SEXP sym_maxgrpn;
+extern SEXP sym_anyna;
+extern SEXP sym_anyinfnan;
+extern SEXP sym_anynotascii;
+extern SEXP sym_anynotutf8;
 extern SEXP sym_colClassesAs;
 extern SEXP sym_verbose;
 extern SEXP SelfRefSymbol;
@@ -128,7 +132,8 @@ int checkOverAlloc(SEXP x);
 // forder.c
 int StrCmp(SEXP x, SEXP y);
 uint64_t dtwiddle(const void *p, int i);
-SEXP forder(SEXP DT, SEXP by, SEXP retGrp, SEXP sortStrArg, SEXP orderArg, SEXP naArg);
+SEXP forder(SEXP DT, SEXP by, SEXP retGrpArg, SEXP retStatsArg, SEXP sortGroupsArg, SEXP ascArg, SEXP naArg);
+SEXP forderLazy(SEXP DT, SEXP by, SEXP retGrpArg, SEXP retStatsArg, SEXP sortGroupsArg, SEXP ascArg, SEXP naArg, SEXP lazyArg); // lazy wrapper to forder
 int getNumericRounding_C();
 
 // reorder.c
@@ -175,7 +180,7 @@ SEXP dogroups(SEXP dt, SEXP dtcols, SEXP groups, SEXP grpcols, SEXP jiscols,
                 SEXP on, SEXP verbose);
 
 // bmerge.c
-SEXP bmerge(SEXP iArg, SEXP xArg, SEXP icolsArg, SEXP xcolsArg, SEXP isorted,
+SEXP bmerge(SEXP iArg, SEXP xArg, SEXP icolsArg, SEXP xcolsArg,
                 SEXP xoArg, SEXP rollarg, SEXP rollendsArg, SEXP nomatchArg,
                 SEXP multArg, SEXP opArg, SEXP nqgrpArg, SEXP nqmaxgrpArg);
 
