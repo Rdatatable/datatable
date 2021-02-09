@@ -289,6 +289,7 @@ replace_dot_alias = function(e) {
 
   # setdiff removes duplicate entries, which'll create issues with duplicated names. Use %chin% instead.
   dupdiff = function(x, y) x[!x %chin% y]
+  dupintersect = function(x, y) x[x %chin% y]
 
   if (!missing(i)) {
     xo = NULL
@@ -861,7 +862,6 @@ replace_dot_alias = function(e) {
         }
         setattr(byval, "names", bynames)  # byval is just a list not a data.table hence setattr not setnames
       }
-
       jvnames = NULL
       drop_dot = function(x) {
         if (length(x)!=1L) stop("Internal error: drop_dot passed ",length(x)," items")  # nocov
@@ -1012,6 +1012,11 @@ replace_dot_alias = function(e) {
         # .SDcols might include grouping columns if users wants that, but normally we expect user not to include them in .SDcols
       } else {
         if (!missing(.SDcols)) warning("This j doesn't use .SD but .SDcols has been supplied. Ignoring .SDcols. See ?data.table.")
+        ## VIOLATES TESTED BEHAVIOR WRT DUPLICATES, SEE TESTS 1290 **
+        if (anyDuplicated(used_from_x <- dupintersect(names_x, av))) {
+          dupcols = unique(used_from_x[duplicated(used_from_x)])
+          stop("Unable to disambiguate reference to duplicated columns in x: ", brackify(dupcols))
+        }
         allcols = c(names_x, xdotprefix, names_i, idotprefix)
         ansvars = sdvars = setdiff(intersect(av, allcols), bynames)
         if (verbose) cat("Detected that j uses these columns:",if (!length(ansvars)) "<none>" else paste(ansvars,collapse=","),"\n")
