@@ -246,8 +246,9 @@ void attribute_visible R_init_datatable(DllInfo *info)
 // relies on pkg/src/Makevars to mv data.table.so to datatable.so
 {
   // C exported routines, see ?cdt for details
-  R_RegisterCCallable("data.table", "CsubsetDT", (DL_FUNC) &subsetDT);
-
+  R_RegisterCCallable("data.table", "subsetDT", (DL_FUNC) &subsetDT);
+  R_RegisterCCallable("data.table", "forder", (DL_FUNC) &forder);
+  
   R_registerRoutines(info, NULL, callMethods, NULL, externalMethods);
   R_useDynamicSymbols(info, FALSE);
   setSizes();
