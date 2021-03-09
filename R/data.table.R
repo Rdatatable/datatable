@@ -1308,10 +1308,14 @@ replace_dot_alias = function(e) {
         if (jcpy) jval = copy(jval)
       } else if (address(jval) == address(SDenv$.SD)) {
         jval = copy(jval)
-      } else if ( length(jcpy <- which(vapply_1c(jval, address) %chin% vapply_1c(SDenv, address))) ) {
-        for (jidx in jcpy) jval[[jidx]] = copy(jval[[jidx]])
-      } else if (jsub %iscall% 'get') {
-        jval = copy(jval) # fix for #1212
+      } else {
+        sd_addresses = vapply_1c(SDenv, address)
+        jcpy = which(vapply_1c(jval, address) %chin% sd_addresses)
+        if (length(jcpy)) {
+          for (jidx in jcpy) jval[[jidx]] = copy(jval[[jidx]])
+        } else if (address(jval) %chin% sd_addresses) {
+          jval = copy(jval) # fix for #4877, includes fix for #1212
+        }
       }
     }
 
