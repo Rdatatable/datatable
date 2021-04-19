@@ -2559,12 +2559,24 @@ setnames = function(x,old,new,skip_absent=FALSE) {
   invisible(x)
 }
 
-setcolorder = function(x, neworder=key(x))
+# before/after support created by ben-schwen@github, #4358
+setcolorder = function(x, neworder=key(x), before=NULL, after=NULL)
 {
   if (is.character(neworder) && anyDuplicated(names(x)))
     stop("x has some duplicated column name(s): ", paste(names(x)[duplicated(names(x))], collapse=","), ". Please remove or rename the duplicate(s) and try again.")
   # if (!is.data.table(x)) stop("x is not a data.table")
+  
+  if (!is.null(before) && !is.null(after))
+    stop("Provide either before= or after= or none but not both.")
+  
   neworder = colnamesInt(x, neworder, check_dups=FALSE)  # dups are now checked inside Csetcolorder below
+  
+  if (!is.null(before))
+    neworder = c(setdiff(seq_len(colnamesInt(x, before) - 1L), neworder), neworder)
+  
+  if (!is.null(after))
+    neworder = c(setdiff(seq_len(colnamesInt(x, after)), neworder), neworder)
+  
   if (length(neworder) != length(x)) {
     #if shorter than length(x), pad by the missing
     #  elements (checks below will catch other mistakes)
