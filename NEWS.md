@@ -89,6 +89,8 @@
     nafill(x, fill=3.14)              # warns that precision has been lost
     nafill(x, fill=as.integer(3.14))  # no warning; the as.<type> conveys intent
     ```
+    
+2. `melt` is now a generic function and will dispatch to `melt.data.table` for `data.table` objects [#4864](https://github.com/Rdatatable/data.table/pull/4864). For non-`data.table` object, the default method attempts to redirect towards `reshape2` methods. This change has no effect for users but enable the development of `melt` methods in other packages. Thanks to @odelmarcelle for suggesting the change.
 
 2. `CsubsetDT` exported C function has been renamed to `DT_subsetDT`. This requires `R_GetCCallable("data.table", "CsubsetDT")` to be updated to `R_GetCCallable("data.table", "DT_subsetDT")`. Additionally there is now a dedicated header file for data.table C exports `include/datatableAPI.h`, [#4643](https://github.com/Rdatatable/data.table/issues/4643), thanks to @eddelbuettel, which makes it easier to _import_ data.table C functions.
 
