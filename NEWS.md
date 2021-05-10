@@ -115,7 +115,11 @@
 
 13. `melt` with a list for `measure.vars` would output `variable` inconsistently between `na.rm=TRUE` and `FALSE`, [#4455](https://github.com/Rdatatable/data.table/issues/4455). Thanks to @tdhock for reporting and fixing.
 
+<<<<<<< HEAD
+14. `GForce` handles `integer64` input correctly for `min` and `max` with missing values, [#4444](https://github.com/Rdatatable/data.table/issues/4444). Thanks @go-see for the report.
+=======
 14. `by=...get()...` could fail with `object not found`, [#4873](https://github.com/Rdatatable/data.table/issues/4873) [#4981](https://github.com/Rdatatable/data.table/issues/4981). Thanks to @sindribaldur for reporting, and @OfekShilon for fixing.
+>>>>>>> master
 
 ## NOTES
 
