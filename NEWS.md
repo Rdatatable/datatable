@@ -86,6 +86,8 @@
         out_col_name = "sum_x"
       )]
     ```
+    
+11. New convenience function `%plike%` which maps to the existing `like()` argument `perl`, [#3702](https://github.com/Rdatatable/data.table/issues/3702). `%plike%` uses Perl-compatible regular expression (PCRE) which extends on TRE and is computationally more efficient. Thanks @KyleHaynes for the suggestion and PR.
 
 ## BUG FIXES
 
