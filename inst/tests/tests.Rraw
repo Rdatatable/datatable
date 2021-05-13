@@ -9046,6 +9046,8 @@ set.seed(123)
 dt = data.table(x1 = rep(letters[1:2], 6), x2 = rep(letters[3:5], 4), x3 = rep(letters[5:8], 3), y = rnorm(12))
 dt = dt[sample(.N)]
 df = as.data.frame(dt)
+options(data.table.prevent.inplace=FALSE)   # By default setDT sets uses TRUE
+
 # - [x] split by factor the same as `split.data.frame` - `f` argument ----
 test(1639.001, lapply(split(df, as.factor(1:2)), setDT), split(dt, as.factor(1:2))) # drop=FALSE on same factor
 test(1639.002, lapply(split(df, as.factor(1:2), drop=TRUE), setDT), split(dt, as.factor(1:2), drop=TRUE)) # drop=TRUE on same factor
@@ -9504,6 +9506,7 @@ test(1639.141, all(sapply(dtL, truelength) > 1000))
 dt <- data.table(x = factor("a"), y = 1)
 test(1639.142, x = split(dt, by = "x"), y = list(a = dt))
 test(1639.143, x = split(dt, by = "y"), y = list(`1` = dt))
+options(data.table.prevent.inplace=NULL)
 
 # allow x's cols (specifically x's join cols) to be referred to using 'x.' syntax
 # patch for #1615. Note that I specifically have not implemented x[y, aa, on=c(aa="bb")]
@@ -17577,3 +17580,18 @@ vr = "Species"
 IDT[, virginca := get(vr) == "virginica"]
 ans = data.table(round = c(3, 3, 3, 2, 2, 4, 2, 4), k = c(6, 7, 8, 5, 7, 7, 6, 8), kar = structure(c(3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L), .Label = c("setosa", "versicolor", "virginica"), class = "factor"), N = c(24L, 14L, 4L, 1L, 1L, 1L, 3L, 2L))
 test(2184.5, IDT[(virginca), .N, by = .(round(Sepal.Width), k = round(Sepal.Length), kar = get(vr))] , ans)
+
+# Fix: In-place assignment can leak to origin DF, #4783
+d <- data.frame(a=c(1,2), b=c(1,2))
+df <- d
+setDT(d)
+orig.address <- address(d$b)
+d[!is.na(a), b:=c(3, 4)]  # Change shouldn't leak to df
+test(2185.1, df$b[1], 1)
+test(2185.2, (orig.address != address(d$b)))
+
+d <- data.table(a=c(1,2), b=c(1,2))
+orig.address <- address(d$b)
+d[!is.na(a), b:=c(3, 4)]
+test(2185.3, d$b[1], 3)  # For Codecov: go over the case where assign-inplace is allowed
+test(2185.4, orig.address, address(d$b))
