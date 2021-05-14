@@ -113,11 +113,7 @@ print.data.table = function(x, topn=getOption("datatable.print.topn"),
   if (printdots) {
     toprint = rbind(head(toprint, topn + isTRUE(class)), "---"="", tail(toprint, topn))
     rownames(toprint) = format(rownames(toprint), justify="right")
-    if (col.names == "none") {
-      cut_colnames(print(toprint, right=TRUE, quote=quote))
-    } else {
-      print(toprint, right=TRUE, quote=quote)
-    }
+    cat_matrix(toprint, nrow(x), quote=quote, col.names=(col.names!="none"))
     if (trunc.cols && length(not_printed) > 0L)
       # prints names of variables not shown in the print
       trunc_cols_message(not_printed, abbs, class, col.names)
@@ -128,11 +124,7 @@ print.data.table = function(x, topn=getOption("datatable.print.topn"),
     # repeat colnames at the bottom if over 20 rows so you don't have to scroll up to see them
     #   option to shut this off per request of Oleg Bondar on SO, #1482
     toprint=rbind(toprint, matrix(if (quote) old else colnames(toprint), nrow=1L)) # fixes bug #97
-  if (col.names == "none") {
-    cut_colnames(print(toprint, right=TRUE, quote=quote))
-  } else {
-    print(toprint, right=TRUE, quote=quote)
-  }
+  cat_matrix(toprint, nrow(x), quote=quote, col.names=(col.names!="none"))
   if (trunc.cols && length(not_printed) > 0L)
     # prints names of variables not shown in the print
     trunc_cols_message(not_printed, abbs, class, col.names)
@@ -190,10 +182,33 @@ shouldPrint = function(x) {
   ret
 }
 
-# for removing the head (column names) of matrix output entirely,
-#   as opposed to printing a blank line, for excluding col.names per PR #1483
-# be sure to remove colnames from any row where they exist, #4270
-cut_colnames = function(x) writeLines(grep("^\\s*(?:[0-9]+:|---)", capture.output(x), value=TRUE))
+cat_matrix = function(x, rows, quote=FALSE, col.names=TRUE) {
+  stopifnot(is.character(x))
+  if (quote) {
+    # the quote on colnames will be added by print.data.table and we
+    # don't need quote for rownames
+    x[] = apply(x, 2L, sprintf, fmt = '"%s"')
+  } else {
+    # if no quote, NA_character_ should be printed as <NA>
+    # non-character NA has been coerced to "NA" already
+    x[is.na(x)] = "<NA>"
+  }
+  rn = rownames(x); cn = colnames(x)
+  x = cbind(rn, unname(x))
+  if (col.names) x = rbind(c(if (length(rn)) "", cn), x)  # see also #1483 and #4270
+  x[] = apply(x, 2L, function(v) {
+    encodeString(v, width = NA, justify = "r")
+  })
+  out = apply(x, 1L, paste, collapse = " ")
+  max_print = getOption("max.print")
+  if (length(out) > max_print) 
+    out = c(
+      out[seq_len(max_print-1L)],
+      sprintf(' [ reached getOption("max.print") -- %d rows in total ]', 
+              rows)
+    )
+  writeLines(out)
+}
 
 # for printing the dims for list columns #3671; used by format.data.table()
 paste_dims = function(x) {
