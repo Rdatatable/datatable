@@ -2643,8 +2643,9 @@ chmatch = function(x, table, nomatch=NA_integer_)
 chmatchdup = function(x, table, nomatch=NA_integer_)
   .Call(Cchmatchdup, x, table, as.integer(nomatch[1L]))
 
+# Force as.character as part of #4708
 "%chin%" = function(x, table)
-  .Call(Cchin, x, table)  # TO DO  if table has 'ul' then match to that
+  .Call(Cchin, as.character(x), table)  # TO DO  if table has 'ul' then match to that
 
 chorder = function(x) {
   o = forderv(x, sort=TRUE, retGrp=FALSE)
