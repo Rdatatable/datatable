@@ -34,6 +34,9 @@
 #define SIZEOF(x) __sizes[TYPEOF(x)]
 #define TYPEORDER(x) __typeorder[x]
 
+static char internal_error_buff[256];
+#define INTERNAL_ERROR(...) do {snprintf(internal_error_buff, 255, __VA_ARGS__); error("%s %s: %s. %s", _("Internal error in"), __func__, internal_error_buff, _("Please report to the data.table issues tracker"));} while (0)
+
 #ifdef MIN
 #  undef MIN
 #endif

@@ -222,13 +222,13 @@ SEXP copyAsPlain(SEXP x) {
     const SEXP *xp=SEXPPTR_RO(x);
     for (int64_t i=0; i<n; ++i) SET_VECTOR_ELT(ans, i, copyAsPlain(xp[i]));
   } break;
-  default:                                                                                           // # nocov
-    error(_("Internal error: unsupported type '%s' passed to copyAsPlain()"), type2char(TYPEOF(x))); // # nocov
+  default:                                                         // # nocov
+    INTERNAL_ERROR("unsupported type '%s'", type2char(TYPEOF(x))); // # nocov
   }
   DUPLICATE_ATTRIB(ans, x);
   // aside: unlike R's duplicate we do not copy truelength here; important for dogroups.c which uses negative truelenth to mark its specials
   if (ALTREP(ans))
-    error(_("Internal error: copyAsPlain returning ALTREP for type '%s'"), type2char(TYPEOF(x))); // # nocov
+    INTERNAL_ERROR("copyAsPlain returning ALTREP for type '%s'", type2char(TYPEOF(x))); // # nocov
   UNPROTECT(1);
   return ans;
 }

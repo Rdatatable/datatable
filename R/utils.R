@@ -21,6 +21,15 @@ nan_is_na = function(x) {
   stop("Argument 'nan' must be NA or NaN")
 }
 
+internal_error = function(...) {
+  e1 = gettext("Internal error in")
+  e2 = deparse(head(tail(sys.calls(), 2L), 1L)[[1L]][[1L]])
+  e3 = do.call(sprintf, list(...))
+  e4 = gettext("Please report to the data.table issues tracker")
+  e = paste0(e1, ' ', e2, ': ', e3, '. ', e4)
+  stop(e, call. = FALSE, domain = NA)
+}
+
 if (base::getRversion() < "3.2.0") {  # Apr 2015
   isNamespaceLoaded = function(x) x %chin% loadedNamespaces()
 }

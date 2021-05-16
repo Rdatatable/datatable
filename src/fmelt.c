@@ -72,7 +72,7 @@ static const char *concat(SEXP vec, SEXP idx) {
   const int *iidx = INTEGER(idx);
   for (int i=0; i<nidx; ++i) {
     if (iidx[i]<1 || iidx[i]>nvec)
-      error(_("Internal error in concat: 'idx' must take values between 1 and length(vec); 1 <= idx <= %d"), nvec); // # nocov
+      INTERNAL_ERROR("'idx' must take values between 1 and length(vec); 1 <= idx <= %d", nvec); // # nocov
   }
   if (nidx>4) nidx=4;  // first 4 following by ... if there are more than 4
   int remaining=1018;  // leaving space for ", ...\0" at the end of the 1024, potentially
@@ -381,10 +381,10 @@ static SEXP combineFactorLevels(SEXP factorLevels, SEXP target, int * factorType
   int maxlevels=0, nitem=length(factorLevels);
   for (int i=0; i<nitem; ++i) {
     SEXP this = VECTOR_ELT(factorLevels, i);
-    if (!isString(this)) error(_("Internal error: combineFactorLevels in fmelt.c expects all-character input"));  // # nocov
+    if (!isString(this)) INTERNAL_ERROR("combineFactorLevels in fmelt.c expects all-character input");  // # nocov
     maxlevels+=length(this);
   }
-  if (!isString(target)) error(_("Internal error: combineFactorLevels in fmelt.c expects a character target to factorize"));  // # nocov
+  if (!isString(target)) INTERNAL_ERROR("combineFactorLevels in fmelt.c expects a character target to factorize");  // # nocov
   int nrow = length(target);
   SEXP ans = PROTECT(allocVector(INTSXP, nrow));
   SEXP *levelsRaw = (SEXP *)R_alloc(maxlevels, sizeof(SEXP));  // allocate for worst-case all-unique levels
@@ -567,7 +567,7 @@ SEXP getvarcols(SEXP DT, SEXP dtnames, Rboolean varfactor, Rboolean verbose, str
   SEXP ansvars=PROTECT(allocVector(VECSXP, data->lvars)); protecti++;
   SEXP target;
   if (data->lvalues==1 && length(VECTOR_ELT(data->valuecols, 0)) != data->lmax)
-    error(_("Internal error: fmelt.c:getvarcols %d %d"), length(VECTOR_ELT(data->valuecols, 0)), data->lmax);  // # nocov
+    INTERNAL_ERROR("getvarcols %d %d", length(VECTOR_ELT(data->valuecols, 0)), data->lmax);  // # nocov
   if (isNull(data->variable_table)) {
     if (!varfactor) {
       SET_VECTOR_ELT(ansvars, 0, target=allocVector(STRSXP, data->totlen));
