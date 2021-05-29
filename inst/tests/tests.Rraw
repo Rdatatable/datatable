@@ -17709,3 +17709,10 @@ test(2191, DT[1:5, sum(v), by=.(i5 = 1:5 %% 2L), verbose=TRUE], data.table(i5=1:
 test(2192.1, as.IDate(c('', '2020-01-01')), structure(c(NA_integer_, 18262L), class=c("IDate","Date")))
 test(2192.2, as.IDate(c('2020-01-01', '')), structure(c(18262L, NA_integer_), class=c("IDate","Date")))
 
+# setDF now drops index attributes, #4889
+d <- data.table(a=1:100, b=1:100)
+setindex(d, a)
+setDF(d)
+d[1:50, "a"] <- d[51:100, "a"]
+setDT(d)
+test(2193, nrow(d[a==99]), as.integer(2))
