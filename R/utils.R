@@ -128,11 +128,26 @@ eval_with_cols = function(orig_call, all_cols) {
   })
   if (!is.primitive(fun)) {
     named_call = match.call(fun, orig_call)
-    if ("cols" %in% names(formals(fun)) && !"cols" %in% names(named_call)) {
-      named_call[["cols"]] = all_cols
+    offsets = NULL
+    if ("cols" %in% names(formals(fun))) {
+      if (!"cols" %in% names(named_call)) {
+        named_call[["cols"]] = all_cols
+      } else if (is.language(named_call[["cols"]])) {
+        named_call[["cols"]] = eval(named_call[["cols"]], parent)
+      }
+      if (!is.character(named_call[["cols"]]) & !all(named_call[["cols"]] %in% all_cols)) {
+        stop("cols must be a subset of the column names of data")
+      }
+      # not strictly needed when cols == all_cols, which is probably the most common case,
+      # but overhead is minimal and this simplifies control flow
+      offsets = which(all_cols %in% named_call[["cols"]])
     }
     named_call[[1L]] = fun
-    eval(named_call, parent)
+    ans = eval(named_call, parent)
+    if (as.character(fun_uneval) %in% c('measure', 'measurev') & is.integer(ans)) {  # the original measure/v
+      ans = setattr(offsets[ans], "variable_table", attributes(ans)[["variable_table"]])
+    }
+    return(ans)
   }
 }
 
