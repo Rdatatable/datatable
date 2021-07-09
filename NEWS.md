@@ -145,6 +145,8 @@
 
 25. `.SDcols=<logical vector>` is now documented in `?data.table` and it is now an error if the logical vector's length is not equal to the number of columns (consistent with `data.table`'s no-recycling policy; see new feature 1 in v1.12.2 Apr 2019), [#4115](https://github.com/Rdatatable/data.table/issues/4115). Thanks to @Henrik-P for reporting and Jan Gorecki for the PR.
 
+26. For the `data.frame` method for `as.data.table`, `keep.rownames` and `key` can be set to the same string successfully. Say `keep.rownames=key='rows'`, the first column in the output will be called `rows`, and the output will be keyed by that column, [#4468](https://github.com/Rdatatable/data.table/issues/4468).
+
 ## NOTES
 
 1. New feature 29 in v1.12.4 (Oct 2019) introduced zero-copy coercion. Our thinking is that requiring you to get the type right in the case of `0` (type double) vs `0L` (type integer) is too inconvenient for you the user. So such coercions happen in `data.table` automatically without warning. Thanks to zero-copy coercion there is no speed penalty, even when calling `set()` many times in a loop, so there's no speed penalty to warn you about either. However, we believe that assigning a character value such as `"2"` into an integer column is more likely to be a user mistake that you would like to be warned about. The type difference (character vs integer) may be the only clue that you have selected the wrong column, or typed the wrong variable to be assigned to that column. For this reason we view character to numeric-like coercion differently and will warn about it. If it is correct, then the warning is intended to nudge you to wrap the RHS with `as.<type>()` so that it is clear to readers of your code that a coercion from character to that type is intended. For example :
@@ -397,7 +399,7 @@ has a better chance of working on Mac.
 
 19. Matrices resulting from logical operators or comparisons on `data.table`s, e.g. in `dta == dtb`, can no longer have their colnames changed by reference later, [#4323](https://github.com/Rdatatable/data.table/issues/4323). Thanks to @eyherabh for reporting and @tlapak for the PR.
 
-20. The environment variable `R_DATATABLE_NUM_THREADS` was being limited by `R_DATATABLE_NUM_PROCS_PERCENT` (by default 50%), [#4514](https://github.com/Rdatatable/data.table/issues/4514). It is now consistent with `setDTthreads()` and only limited by the full number of logical CPUs. For example, on a machine with 8 logical CPUs, `R_DATATABLE_NUM_THREADS=6` now results in 6 threads rather than 4 (50% of 8).r
+20. The environment variable `R_DATATABLE_NUM_THREADS` was being limited by `R_DATATABLE_NUM_PROCS_PERCENT` (by default 50%), [#4514](https://github.com/Rdatatable/data.table/issues/4514). It is now consistent with `setDTthreads()` and only limited by the full number of logical CPUs. For example, on a machine with 8 logical CPUs, `R_DATATABLE_NUM_THREADS=6` now results in 6 threads rather than 4 (50% of 8).
 
 ## NOTES
 
